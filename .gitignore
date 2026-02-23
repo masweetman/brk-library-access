@@ -1,0 +1,113 @@
+# config files
+config.ini
+wp_cookies.json
+wsj_cookies.json
+
+# Python and Playwright .gitignore
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-wheel-metadata/
+wheelhouse/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+.pytest_cache/
+pytest_cache/
+test-results/
+playwright-report/
+
+# Playwright artifacts and caches
+.playwright/
+.cache/ms-playwright/
+playwright-resources/
+traces/
+trace.zip
+videos/
+screenshots/
+
+# Virtual environments
+.env
+.env.*
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+__pypackages__/
+
+# Editor and IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs and databases
+*.log
+*.sqlite3
+*.sqlite3-journal
+
+# Sphinx, docs, caches
+docs/_build/
+.site
+
+# Pyright / MyPy / linters
+.mypy_cache/
+.dmypy.json
+.dmypy
+.pyre/
+
+# Misc
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.bak
+*.tmp
+
+# Node (optional, if frontend tooling exists)
+node_modules/
+npm-debug.log
+yarn-error.log
