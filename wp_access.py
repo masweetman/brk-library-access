@@ -61,9 +61,17 @@ def load_cookies(path: Path) -> list:
 def run():
     cfg = load_config(CONFIG_FILE)
 
+    wp_email      = cfg.get("washingtonpost", "wp_email").strip()
+    wp_password   = cfg.get("washingtonpost", "wp_password").strip()
     headless      = cfg.getboolean("browser", "headless",    fallback=True)
     timeout       = cfg.getint("browser",    "timeout",      fallback=30000)
     user_data_dir = cfg.get("browser",       "user_data_dir").strip()
+    delay_min     = cfg.getint("browser",    "delay_min_ms", fallback=300)
+    delay_max     = cfg.getint("browser",    "delay_max_ms", fallback=900)
+
+    if not wp_email or not wp_password:
+        print("[ERROR] Please fill in wp_email and wp_password in config.ini")
+        sys.exit(1)
 
     Path(user_data_dir).mkdir(parents=True, exist_ok=True)
 
@@ -98,15 +106,53 @@ def run():
             page.goto(START_URL, wait_until="domcontentloaded")
             print(f"[INFO] Page loaded. URL: {page.url}")
 
-            # ── Step 2: Click "Continue to today's news" ──────────────────────
+            # ── Step 2: Click "Continue to today's news" (or fall back to login) ──
             print("[INFO] Waiting for Continue button...")
             continue_btn = page.locator("button[data-test-id='continue-reading-btn']")
-            continue_btn.wait_for(state="visible")
-            continue_btn.click()
-            print("[INFO] Clicked 'Continue to today's news'.")
 
-            page.wait_for_load_state("domcontentloaded")
-            print(f"[SUCCESS] Done. Final URL: {page.url}")
+            try:
+                continue_btn.wait_for(state="visible", timeout=10000)
+                continue_btn.click()
+                print("[INFO] Clicked 'Continue to today\'s news'.")
+                page.wait_for_load_state("domcontentloaded")
+                print(f"[SUCCESS] Done. Final URL: {page.url}")
+
+            except PlaywrightTimeoutError:
+                # Continue button not found — cookies may be expired or not accepted.
+                # Fall back to manual email/password login.
+                print("[INFO] Continue button not found. Falling back to email/password login...")
+
+                # ── Fallback Step A: Enter email and click Next ───────────────
+                print("[INFO] Waiting for email field...")
+                email_field = page.locator("input#username[type='email'][name='email']")
+                email_field.wait_for(state="visible")
+                import time, random
+                time.sleep(random.uniform(delay_min / 1000, delay_max / 1000))
+                email_field.fill(wp_email)
+                print("[INFO] Filled email.")
+                time.sleep(random.uniform(delay_min / 1000, delay_max / 1000))
+
+                page.locator("button[data-qa='sign-in-btn'][usedfor='email'][type='submit']").first.click()
+                print("[INFO] Clicked Next. Waiting for password page...")
+                page.wait_for_load_state("domcontentloaded")
+                print(f"[INFO] Landed on: {page.url}")
+
+                # ── Fallback Step B: Enter password and click Sign in ─────────
+                print("[INFO] Waiting for password field...")
+                password_field = page.locator("input#password[type='password'][name='password']")
+                password_field.wait_for(state="visible")
+                time.sleep(random.uniform(delay_min / 1000, delay_max / 1000))
+                password_field.fill(wp_password)
+                print("[INFO] Filled password.")
+                time.sleep(random.uniform(delay_min / 1000, delay_max / 1000))
+
+                page.locator("button[data-qa='sign-in-btn'][usedfor='email'][type='submit']").first.click()
+                print("[INFO] Clicked Sign in. Waiting for final page...")
+                page.wait_for_load_state("domcontentloaded")
+                print(f"[SUCCESS] Done. Final URL: {page.url}")
+                import time
+                print("[INFO] Waiting 5 seconds...")
+                time.sleep(5)
 
         except PlaywrightTimeoutError:
             print("[ERROR] Timed out waiting for a page element or navigation.")
