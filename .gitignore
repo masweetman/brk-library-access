@@ -1,7 +1,6 @@
 # config files
-config.ini
-wp_cookies.json
-wsj_cookies.json
+*.ini
+*.json
 
 # Python and Playwright .gitignore
 
