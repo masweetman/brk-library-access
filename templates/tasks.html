@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %} — Access Tasks{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Access Tasks</h2>
+  <a href="{{ url_for('task_new') }}" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> New Task
+  </a>
+</div>
+
+{% set labels = {'nyt': 'New York Times', 'wp': 'Washington Post', 'wsj': 'Wall Street Journal'} %}
+{% set status_classes = {'success': 'success', 'failed': 'danger', 'running': 'warning'} %}
+
+{% if tasks %}
+<div class="card shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
+      <tr>
+        <th>Name</th>
+        <th>Publication</th>
+        <th>Email</th>
+        <th>Last Run</th>
+        <th>Status</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tasks %}
+      <tr>
+        <td class="fw-semibold">{{ t.name or '(unnamed)' }}</td>
+        <td>{{ labels[t.access_type] }}</td>
+        <td class="text-muted small">{{ t.access_email }}</td>
+        <td class="text-muted small">{{ t.last_run_at or '—' }}</td>
+        <td>
+          {% if t.last_run_status %}
+            <span class="badge bg-{{ status_classes.get(t.last_run_status, 'secondary') }}
+                         {{ 'badge-running' if t.last_run_status == 'running' }}">
+              {{ t.last_run_status }}
+            </span>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td class="text-end">
+          <div class="d-flex gap-1 justify-content-end">
+            <form method="post" action="{{ url_for('task_run', task_id=t.id) }}">
+              <button class="btn btn-sm btn-success" title="Run now">
+                <i class="bi bi-play-fill"></i> Run
+              </button>
+            </form>
+            <a href="{{ url_for('task_runs', task_id=t.id) }}"
+               class="btn btn-sm btn-outline-secondary" title="Run history">
+              <i class="bi bi-clock-history"></i>
+            </a>
+            <a href="{{ url_for('task_edit', task_id=t.id) }}"
+               class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="post" action="{{ url_for('task_delete', task_id=t.id) }}"
+                  onsubmit="return confirm('Delete task \'{{ t.name or t.id }}\'?')">
+              <button class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+  No tasks yet. <a href="{{ url_for('task_new') }}">Create one.</a>
+</div>
+{% endif %}
+{% endblock %}

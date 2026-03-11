@@ -17,7 +17,7 @@ Proxy setup (optional but recommended):
 
 import configparser
 import json
-import math
+import os
 import random
 import sys
 import time
@@ -35,8 +35,8 @@ except ImportError:
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-CONFIG_FILE  = Path(__file__).parent / "config.ini"
-COOKIES_FILE = Path(__file__).parent / "nytimes_cookies.json"
+CONFIG_FILE  = Path(os.environ.get("BRK_CONFIG_FILE",  Path(__file__).parent / "config.ini"))
+COOKIES_FILE = Path(os.environ.get("BRK_COOKIES_FILE", Path(__file__).parent / "nytimes_cookies.json"))
 REDEEM_URL   = "https://www.nytimes.com/subscription/redeem/all-access"
 GIFT_CODE    = "51c231ece107414f"
 

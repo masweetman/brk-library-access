@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %} — Run #{{ run.id if run else '?' }}{% endblock %}
+
+{% block content %}
+
+{% if not run %}
+  <div class="alert alert-danger">Run not found.</div>
+{% else %}
+
+{% set labels = {'nyt': 'New York Times', 'wp': 'Washington Post', 'wsj': 'Wall Street Journal'} %}
+{% set sc     = {'success': 'success',    'failed': 'danger',      'running': 'warning'} %}
+
+<div class="d-flex align-items-center gap-3 mb-2">
+  <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h2 class="mb-0">Run #{{ run.id }}</h2>
+  <span id="status-badge"
+        class="badge bg-{{ sc.get(run.status, 'secondary') }} fs-6
+               {{ 'badge-running' if run.status == 'running' }}">
+    {{ run.status or '—' }}
+  </span>
+</div>
+
+{% if task %}
+<p class="text-muted mb-1">
+  Task: <strong>{{ task.name or '(unnamed)' }}</strong> — {{ labels.get(task.access_type, task.access_type) }}
+</p>
+{% endif %}
+<p class="text-muted small mb-3">
+  Started: {{ run.started_at }}
+  {% if run.finished_at %} &middot; Finished: {{ run.finished_at }}{% endif %}
+</p>
+
+<pre class="run-output" id="output-pre">{{ run.output or '(waiting for output…)' }}</pre>
+
+{% if not run.finished_at %}
+<div class="mt-2 text-muted small" id="polling-note">
+  <i class="bi bi-arrow-repeat"></i> Polling for updates every 2 s…
+</div>
+{% endif %}
+
+<div class="mt-3 d-flex gap-2">
+  {% if task %}
+  <a href="{{ url_for('task_runs', task_id=task.id) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-clock-history"></i> All runs for this task
+  </a>
+  {% endif %}
+</div>
+
+{% endif %}
+
+{% if run and not run.finished_at %}
+<script>
+(function () {
+  const runId  = {{ run.id }};
+  const pre    = document.getElementById('output-pre');
+  const badge  = document.getElementById('status-badge');
+  const note   = document.getElementById('polling-note');
+  const scMap  = { success: 'bg-success', failed: 'bg-danger', running: 'bg-warning' };
+
+  function poll() {
+    fetch('/runs/' + runId + '/status')
+      .then(r => r.json())
+      .then(data => {
+        pre.textContent = data.output || '(waiting for output…)';
+        pre.scrollTop   = pre.scrollHeight;
+
+        if (data.status !== 'running') {
+          badge.textContent = data.status;
+          badge.className   = 'badge fs-6 ' + (scMap[data.status] || 'bg-secondary');
+          if (note) note.remove();
+        } else {
+          setTimeout(poll, 2000);
+        }
+      })
+      .catch(() => setTimeout(poll, 3000));
+  }
+
+  setTimeout(poll, 2000);
+})();
+</script>
+{% endif %}
+
+{% endblock %}

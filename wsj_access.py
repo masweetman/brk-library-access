@@ -16,16 +16,26 @@ Requirements:
 
 import configparser
 import json
+import os
 import random
 import sys
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
+# Try to import playwright-stealth; fall back to manual patches if not installed
+try:
+    from playwright_stealth import Stealth
+    USE_STEALTH_LIB = True
+except ImportError:
+    USE_STEALTH_LIB = False
+    print("[WARN] playwright-stealth not installed. Using manual stealth patches.")
+    print("[WARN] Install with: pip install playwright-stealth")
+
 # ── Config ────────────────────────────────────────────────────────────────────
 
-CONFIG_FILE  = Path(__file__).parent / "config.ini"
-COOKIES_FILE = Path(__file__).parent / "wsj_cookies.json"
+CONFIG_FILE  = Path(os.environ.get("BRK_CONFIG_FILE",  Path(__file__).parent / "config.ini"))
+COOKIES_FILE = Path(os.environ.get("BRK_COOKIES_FILE", Path(__file__).parent / "wsj_cookies.json"))
 FORM_URL     = "https://services.berkeleypubliclibrary.org/wsj_access.php"
 
 # ── Stealth JS ────────────────────────────────────────────────────────────────
@@ -149,7 +159,12 @@ def run():
             ignore_default_args=["--enable-automation"],
         )
 
-        context.add_init_script(STEALTH_SCRIPT)
+        # Apply stealth — use library if available, else fall back to manual script
+        if USE_STEALTH_LIB:
+            stealth = Stealth(navigator_webdriver=False)
+            stealth.apply_stealth_sync(context)
+        else:
+            context.add_init_script(STEALTH_SCRIPT)
 
         # Inject WSJ cookies so the partner handoff lands in an authenticated session
         context.add_cookies(cookies)
@@ -189,17 +204,46 @@ def run():
             print("[INFO] Looking for WSJ partner link...")
             partner_link = page.locator("a[href*='partner.wsj.com']")
             partner_link.wait_for(state="visible")
-
-            # Extract the URL and navigate directly rather than clicking,
-            # so the full page load is handled by goto() with proper waiting.
             partner_url = partner_link.get_attribute("href")
-            print(f"[INFO] Navigating directly to: {partner_url}")
+            print(f"[INFO] Found partner URL: {partner_url}")
             human_delay(delay_min, delay_max)
 
-            page.goto(partner_url, wait_until="domcontentloaded")
+            # Click the link rather than calling goto() so the browser sends
+            # the correct Referer header — partner.wsj.com checks it.
+            print("[INFO] Clicking partner link...")
+            with page.expect_navigation(wait_until="domcontentloaded", timeout=timeout):
+                partner_link.click()
             print(f"[INFO] DOM loaded. URL: {page.url}")
 
-            page.wait_for_load_state("networkidle")
+            # Don't wait for networkidle — WSJ's SPA keeps background requests
+            # running and it may never fire. Wait for the first form element instead.
+
+            # ── Step 6a: Uncheck email subscription checkbox ──────────────────
+            print("[INFO] Waiting for registration form...")
+            email_sub = page.locator("#main > div > div > div > div.container > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(1) > div")
+            email_sub.wait_for(state="visible", timeout=timeout)
+            print(f"[INFO] Registration form ready. URL: {page.url}")
+            email_sub.click()
+            print("[INFO] Clicked email subscription checkbox.")
+            human_delay(delay_min, delay_max)
+
+            # ── Step 6b: Check terms acceptance checkbox ──────────────────────
+            print("[INFO] Checking terms acceptance checkbox...")
+            terms_cb = page.locator("#main > div > div > div > div.container > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(2) > div")
+            terms_cb.wait_for(state="visible")
+            terms_cb.click()
+            print("[INFO] Clicked terms acceptance checkbox.")
+            human_delay(delay_min, delay_max)
+
+            # ── Step 6c: Click Register ───────────────────────────────────────
+            print("[INFO] Clicking Register button...")
+            register_btn = page.locator("#main > div > div > div > div.container > div > div.row > div > button")
+            register_btn.wait_for(state="visible")
+            human_delay(delay_min, delay_max)
+            register_btn.click()
+            print("[INFO] Clicked Register. Waiting for next page...")
+            page.wait_for_load_state("domcontentloaded")
+            page.wait_for_load_state("networkidle", timeout=timeout)
             print(f"[SUCCESS] Done. Final URL: {page.url}")
 
             # Pause so the page is visible before the browser closes

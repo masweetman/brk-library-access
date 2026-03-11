@@ -16,14 +16,15 @@ Requirements:
 
 import configparser
 import json
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-CONFIG_FILE  = Path(__file__).parent / "config.ini"
-COOKIES_FILE = Path(__file__).parent / "wp_cookies.json"
+CONFIG_FILE  = Path(os.environ.get("BRK_CONFIG_FILE",  Path(__file__).parent / "config.ini"))
+COOKIES_FILE = Path(os.environ.get("BRK_COOKIES_FILE", Path(__file__).parent / "wp_cookies.json"))
 START_URL    = "https://www.washingtonpost.com/subscribe/signin/special-offers/?s_oe=SPECIALOFFER_BERKELEYPL"
 
 

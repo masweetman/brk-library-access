@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %} — {{ 'Edit Task' if task else 'New Task' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-secondary me-3">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="mb-0">{{ 'Edit Task' if task else 'New Task' }}</h2>
+  </div>
+
+  <form method="post" class="card shadow-sm p-4">
+
+    <!-- Name -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">
+        Task Name <span class="text-muted fw-normal">(optional)</span>
+      </label>
+      <input type="text" name="name" class="form-control"
+             value="{{ task.name if task else '' }}"
+             placeholder="e.g. Mike's NYT">
+    </div>
+
+    <!-- Publication -->
+    <div class="mb-4">
+      <label class="form-label fw-semibold">Publication <span class="text-danger">*</span></label>
+      <select name="access_type" class="form-select" required>
+        {% set opts = [('nyt','New York Times'), ('wp','Washington Post'), ('wsj','Wall Street Journal')] %}
+        {% for val, label in opts %}
+          <option value="{{ val }}" {{ 'selected' if task and task.access_type == val }}>
+            {{ label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <hr class="my-1">
+    <p class="text-uppercase text-muted small fw-semibold mt-3 mb-3">Library Card</p>
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6">
+        <label class="form-label">Card Number <span class="text-danger">*</span></label>
+        <input type="text" name="library_card_number" class="form-control" required
+               value="{{ task.library_card_number if task else '' }}"
+               placeholder="Barcode number">
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+        <input type="text" name="library_last_name" class="form-control" required
+               value="{{ task.library_last_name if task else '' }}"
+               placeholder="As on library account">
+      </div>
+    </div>
+
+    <hr class="my-1">
+    <p class="text-uppercase text-muted small fw-semibold mt-3 mb-3">Publication Account</p>
+
+    <div class="mb-3">
+      <label class="form-label">Email <span class="text-danger">*</span></label>
+      <input type="email" name="access_email" class="form-control" required
+             value="{{ task.access_email if task else '' }}">
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Password <span class="text-danger">*</span></label>
+      <input type="password" name="access_password" class="form-control" required
+             value="{{ task.access_password if task else '' }}"
+             autocomplete="current-password">
+    </div>
+
+    <hr class="my-1">
+    <p class="text-uppercase text-muted small fw-semibold mt-3 mb-1">
+      Cookies <span class="text-muted fw-normal text-lowercase">(JSON — required for WP &amp; WSJ)</span>
+    </p>
+
+    <div class="mb-4">
+      <textarea name="access_cookies" class="form-control font-monospace" rows="7"
+                placeholder='[{"name": "...", "value": "...", "domain": "...", ...}]'>{{ task.access_cookies if task else '' }}</textarea>
+      <div class="form-text">
+        Log into the publication in your real browser, then export via
+        <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm"
+           target="_blank" rel="noopener">Cookie‑Editor</a>
+        (Export → Export as JSON). Paste the result here.
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-check-lg"></i> {{ 'Save Changes' if task else 'Create Task' }}
+      </button>
+      <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+</div>
+{% endblock %}

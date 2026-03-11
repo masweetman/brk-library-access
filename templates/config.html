@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %} — Configuration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+  <h2 class="mb-4">Configuration</h2>
+
+  <form method="post">
+
+    <!-- Proxy -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-wifi"></i> Proxy
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Server</label>
+          <input type="text" name="proxy_server" class="form-control font-monospace"
+                 value="{{ settings.proxy_server }}"
+                 placeholder="http://proxy.example.com:8080  or  socks5://...">
+          <div class="form-text">
+            Leave blank to disable. A residential proxy is recommended for NYT and Washington Post
+            to avoid bot detection.
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label">Username</label>
+            <input type="text" name="proxy_username" class="form-control"
+                   value="{{ settings.proxy_username }}" autocomplete="off">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Password</label>
+            <input type="password" name="proxy_password" class="form-control"
+                   value="{{ settings.proxy_password }}" autocomplete="new-password">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Browser -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-browser-chrome"></i> Browser
+      </div>
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label class="form-label">Persistent Profile Directory</label>
+          <input type="text" name="user_data_dir" class="form-control font-monospace"
+                 value="{{ settings.user_data_dir }}"
+                 placeholder="/home/you/.bpl_browser_profile">
+          <div class="form-text">
+            Stores session cookies between runs so you stay logged in.
+            Leave blank to use <code>~/.bpl_browser_profile</code>.
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-sm-4">
+            <label class="form-label">Timeout (ms)</label>
+            <input type="number" name="timeout" class="form-control"
+                   value="{{ settings.timeout }}" min="1000" step="1000">
+            <div class="form-text">Per-element wait limit.</div>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Min Delay (ms)</label>
+            <input type="number" name="delay_min_ms" class="form-control"
+                   value="{{ settings.delay_min_ms }}" min="0">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Max Delay (ms)</label>
+            <input type="number" name="delay_max_ms" class="form-control"
+                   value="{{ settings.delay_max_ms }}" min="0">
+          </div>
+        </div>
+        <div class="form-text mb-3">Min/Max Delay: random pause range between actions to mimic human timing.</div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-sm-4">
+            <label class="form-label">Slow‑Mo (ms)</label>
+            <input type="number" name="slow_mo_ms" class="form-control"
+                   value="{{ settings.slow_mo_ms }}" min="0">
+            <div class="form-text">Fixed delay added to every browser interaction.</div>
+          </div>
+        </div>
+
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="headless"
+                 id="headlessSwitch" {{ 'checked' if settings.headless }}>
+          <label class="form-check-label" for="headlessSwitch">Headless mode</label>
+          <div class="form-text">
+            Uncheck to watch the browser window — useful when debugging a script.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary px-4">
+      <i class="bi bi-floppy"></i> Save Configuration
+    </button>
+
+  </form>
+
+</div>
+</div>
+{% endblock %}

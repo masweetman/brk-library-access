@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %} — Run History{% endblock %}
+
+{% block content %}
+
+{% set labels = {'nyt': 'New York Times', 'wp': 'Washington Post', 'wsj': 'Wall Street Journal'} %}
+{% set sc     = {'success': 'success',    'failed': 'danger',      'running': 'warning'} %}
+
+<div class="d-flex align-items-center gap-3 mb-3">
+  <a href="{{ url_for('tasks') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <div>
+    <h2 class="mb-0">Run History</h2>
+    {% if task %}
+    <p class="text-muted small mb-0 mt-1">
+      {{ task.name or '(unnamed)' }} — {{ labels.get(task.access_type, task.access_type) }}
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+{% if runs %}
+<div class="card shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="table-light">
+      <tr>
+        <th>Run #</th>
+        <th>Started</th>
+        <th>Finished</th>
+        <th>Status</th>
+        <th class="text-end">Output</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in runs %}
+      <tr>
+        <td class="fw-semibold text-muted">{{ r.id }}</td>
+        <td class="small text-muted">{{ r.started_at }}</td>
+        <td class="small text-muted">{{ r.finished_at or '—' }}</td>
+        <td>
+          <span class="badge bg-{{ sc.get(r.status, 'secondary') }}
+                       {{ 'badge-running' if r.status == 'running' }}">
+            {{ r.status or '—' }}
+          </span>
+        </td>
+        <td class="text-end">
+          <a href="{{ url_for('run_detail', run_id=r.id) }}"
+             class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-terminal"></i> View
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
+  No runs yet.
+  {% if task %}
+  <br>
+  <form method="post" action="{{ url_for('task_run', task_id=task.id) }}" class="d-inline">
+    <button class="btn btn-success mt-2"><i class="bi bi-play-fill"></i> Run now</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
