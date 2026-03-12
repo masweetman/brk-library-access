@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %} — {{ 'Edit User' if user else 'New User' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-5">
+
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('user_list') }}" class="btn btn-sm btn-outline-secondary me-3">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="mb-0">{{ 'Edit User' if user else 'New User' }}</h2>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" class="card shadow-sm p-4">
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
+      <input type="text" name="username" class="form-control" required
+             value="{{ user.username if user else '' }}"
+             autocomplete="off">
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label fw-semibold">
+        Password {% if user %}<span class="text-muted fw-normal">(leave blank to keep current)</span>{% else %}<span class="text-danger">*</span>{% endif %}
+      </label>
+      <input type="password" name="password" class="form-control"
+             {{ 'required' if not user }}
+             autocomplete="new-password">
+    </div>
+
+    <div class="mb-4">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" name="is_admin"
+               id="isAdminSwitch" {{ 'checked' if user and user.is_admin }}>
+        <label class="form-check-label fw-semibold" for="isAdminSwitch">Administrator</label>
+        <div class="form-text">
+          Administrators can manage settings, add users, and view all tasks.
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-check-lg"></i> {{ 'Save Changes' if user else 'Create User' }}
+      </button>
+      <a href="{{ url_for('user_list') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+
+  </form>
+</div>
+</div>
+{% endblock %}

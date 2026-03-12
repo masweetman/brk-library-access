@@ -19,7 +19,9 @@
       <tr>
         <th>Name</th>
         <th>Publication</th>
-        <th>Email</th>
+        {% if current_user.is_admin %}<th>Owner</th>{% endif %}
+        <th>Schedule</th>
+        <th>Cookies Expire</th>
         <th>Last Run</th>
         <th>Status</th>
         <th class="text-end">Actions</th>
@@ -30,7 +32,30 @@
       <tr>
         <td class="fw-semibold">{{ t.name or '(unnamed)' }}</td>
         <td>{{ labels[t.access_type] }}</td>
-        <td class="text-muted small">{{ t.access_email }}</td>
+        {% if current_user.is_admin %}
+        <td class="text-muted small">{{ t.username }}</td>
+        {% endif %}
+        <td class="text-muted small">
+          {% if t.schedule_enabled %}
+            <i class="bi bi-alarm text-primary" title="Scheduled"></i>
+            every {{ t.schedule_interval }}m
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td class="small">
+          {% if t.cookies_expire_at %}
+            <span class="
+              {%- if t.cookies_expire_at < now_utc %} text-danger fw-semibold
+              {%- elif t.cookies_expire_at[:7] <= now_utc[:7] %} text-warning fw-semibold
+              {%- else %} text-muted
+              {%- endif %}" title="{{ t.cookies_expire_at }} UTC">
+              {{ t.cookies_expire_at[:10] }}
+            </span>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
         <td class="text-muted small">{{ t.last_run_at or '—' }}</td>
         <td>
           {% if t.last_run_status %}

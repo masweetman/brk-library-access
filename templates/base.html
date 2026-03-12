@@ -36,12 +36,35 @@
             <i class="bi bi-list-task"></i> Access Tasks
           </a>
         </li>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ('user_list','user_new','user_edit') %}active{% endif %}"
+             href="{{ url_for('user_list') }}">
+            <i class="bi bi-people"></i> Users
+          </a>
+        </li>
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'config' %}active{% endif %}"
              href="{{ url_for('config') }}">
             <i class="bi bi-sliders"></i> Configuration
           </a>
         </li>
+        {% endif %}
+        {% if current_user.is_authenticated %}
+        <li class="nav-item dropdown ms-2">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+            {% if current_user.is_admin %}<span class="badge bg-danger ms-1" style="font-size:.65rem">admin</span>{% endif %}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                <i class="bi bi-box-arrow-right"></i> Sign out
+              </a>
+            </li>
+          </ul>
+        </li>
+        {% endif %}
       </ul>
     </div>
   </div>
