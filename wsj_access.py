@@ -21,7 +21,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import expect, sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 # Try to import playwright-stealth; fall back to manual patches if not installed
 try:
@@ -218,14 +218,29 @@ def run():
             # Don't wait for networkidle — WSJ's SPA keeps background requests
             # running and it may never fire. Wait for the first form element instead.
 
-            # ── Step 6a: Uncheck email subscription checkbox ──────────────────
-            print("[INFO] Waiting for registration form...")
+            # ── Step 6a: Check for existing subscription or show registration form ──
+            print("[INFO] Waiting for page content after partner redirect...")
+
+            print("[INFO] Registration form detected. Proceeding...")
+            #subscribe button
             email_sub = page.locator("#main > div > div > div > div.container > div > div:nth-child(2) > div:nth-child(3) > div:nth-child(1) > div")
-            email_sub.wait_for(state="visible", timeout=timeout)
-            print(f"[INFO] Registration form ready. URL: {page.url}")
-            email_sub.click()
-            print("[INFO] Clicked email subscription checkbox.")
-            human_delay(delay_min, delay_max)
+            # If the page says the user already has a subscription, we're done.
+            already_sub = page.get_by_text("already have")
+
+            either_locator = email_sub.or_(already_sub)
+            expect(either_locator).to_be_visible()
+
+            #email_sub.wait_for(state="visible", timeout=timeout)
+            if already_sub.is_visible():
+                print("[SUCCESS] User already has an active WSJ subscription. Done.")
+                return
+            elif email_sub.is_visible():
+                print(f"[INFO] Registration form ready. URL: {page.url}")
+                email_sub.click()
+                print("[INFO] Clicked email subscription checkbox.")
+                human_delay(delay_min, delay_max)
+            else:
+                email_sub.wait_for(state="visible", timeout=timeout)
 
             # ── Step 6b: Check terms acceptance checkbox ──────────────────────
             print("[INFO] Checking terms acceptance checkbox...")
