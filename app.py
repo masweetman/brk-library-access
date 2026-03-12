@@ -524,8 +524,9 @@ def _scheduler_tick():
         db.close()
 
 
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     scheduler = BackgroundScheduler()
     scheduler.add_job(_scheduler_tick, "interval", minutes=1)
     scheduler.start()

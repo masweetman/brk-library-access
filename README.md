@@ -144,13 +144,6 @@ Install gunicorn into the venv:
 sudo -u brkaccess /home/brkaccess/brk-library-access/.venv/bin/pip install gunicorn
 ```
 
-Initialise the database (creates `brk_access.db` with a default `admin` / `password` account):
-
-```bash
-sudo -u brkaccess bash -c "cd /home/brkaccess/brk-library-access && \
-    .venv/bin/python -c 'from db import init_db; init_db()'"
-```
-
 Enable and start the service:
 
 ```bash
