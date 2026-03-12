@@ -1,24 +1,9 @@
-import os
-
 import json
+import os
 from datetime import datetime, timezone
+from functools import wraps
 
 from apscheduler.schedulers.background import BackgroundScheduler
-
-
-def _parse_cookie_expiry(cookies_raw: str) -> str | None:
-    """Return the first cookie's expirationDate as 'YYYY-MM-DD HH:MM:SS' UTC, or None."""
-    try:
-        cookies = json.loads(cookies_raw)
-        if not isinstance(cookies, list) or not cookies:
-            return None
-        exp = cookies[0].get("expirationDate")
-        if exp is None:
-            return None
-        dt = datetime.fromtimestamp(float(exp), tz=timezone.utc)
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception:
-        return None
 from flask import (Flask, abort, jsonify, redirect, render_template,
                    request, url_for)
 from flask_login import (LoginManager, UserMixin, current_user, login_required,
@@ -39,6 +24,20 @@ login_manager.login_message_category = "warning"
 def inject_now_utc():
     return {"now_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}
 
+
+def _parse_cookie_expiry(cookies_raw: str) -> str | None:
+    """Return the first cookie's expirationDate as 'YYYY-MM-DD HH:MM:SS' UTC, or None."""
+    try:
+        cookies = json.loads(cookies_raw)
+        if not isinstance(cookies, list) or not cookies:
+            return None
+        exp = cookies[0].get("expirationDate")
+        if exp is None:
+            return None
+        dt = datetime.fromtimestamp(float(exp), tz=timezone.utc)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return None
 
 # ── User model ─────────────────────────────────────────────────────────────────
 
@@ -63,7 +62,6 @@ def load_user(user_id):
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 def admin_required(f):
-    from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:

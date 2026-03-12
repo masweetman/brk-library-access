@@ -1,6 +1,15 @@
-# config files
+# Project-specific secrets and local config
 *.ini
 *.json
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Flask
+instance/
+.env
+.flaskenv
 
 # Python and Playwright .gitignore
 
