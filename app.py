@@ -222,6 +222,41 @@ def user_delete(user_id):
     return redirect(url_for("user_list"))
 
 
+# ── User profile (any authenticated user) ─────────────────────────────────────
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    error = None
+    success = None
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password     = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        db  = get_db()
+        row = db.execute("SELECT * FROM users WHERE id = ?", (current_user.id,)).fetchone()
+
+        if not verify_password(current_password, row["password"], row["salt"]):
+            error = "Current password is incorrect."
+        elif not new_password:
+            error = "New password cannot be empty."
+        elif new_password != confirm_password:
+            error = "New passwords do not match."
+        else:
+            hashed, salt = hash_password(new_password)
+            db.execute(
+                "UPDATE users SET password = ?, salt = ? WHERE id = ?",
+                (hashed, salt, current_user.id),
+            )
+            db.commit()
+            success = "Password updated successfully."
+
+        db.close()
+
+    return render_template("profile.html", error=error, success=success)
+
+
 # ── Configuration page (admin only) ───────────────────────────────────────────
 
 @app.route("/config", methods=["GET", "POST"])
@@ -292,7 +327,7 @@ def task_new():
     if request.method == "POST":
         db = get_db()
         sched_enabled  = 1 if request.form.get("schedule_enabled") else 0
-        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1440, 1440))
+        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1441, 1441))
         next_run       = f"datetime('now', '+{sched_interval} minutes')" if sched_enabled else "NULL"
         cookies_raw    = request.form.get("access_cookies", "").strip()
         cookie_expiry  = _parse_cookie_expiry(cookies_raw)
@@ -335,7 +370,7 @@ def task_edit(task_id):
 
     if request.method == "POST":
         sched_enabled  = 1 if request.form.get("schedule_enabled") else 0
-        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1440, 1440))
+        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1441, 1441))
         next_run       = f"datetime('now', '+{sched_interval} minutes')" if sched_enabled else "NULL"
         cookies_raw    = request.form.get("access_cookies", "").strip()
         cookie_expiry  = _parse_cookie_expiry(cookies_raw)

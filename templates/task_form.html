@@ -104,18 +104,18 @@
       <div class="form-check form-switch mb-0">
         <input class="form-check-input" type="checkbox" role="switch"
                name="schedule_enabled" id="schedule_enabled"
-               {{ 'checked' if task and task.schedule_enabled }}>
+               {{ 'checked' if (task and task.schedule_enabled) or not task }}>
         <label class="form-check-label" for="schedule_enabled">Run automatically</label>
       </div>
     </div>
 
     <div class="row g-3 mb-4" id="schedule_fields"
-         style="{{ '' if (task and task.schedule_enabled) else 'display:none' }}">
+         style="{{ '' if (task and task.schedule_enabled) or not task else 'display:none' }}">
       <div class="col-sm-5">
         <label class="form-label">Interval <span class="text-muted fw-normal">(minutes)</span></label>
         <input type="number" name="schedule_interval" id="schedule_interval"
                class="form-control" min="1" step="1"
-               value="{{ task.schedule_interval if task else 1440 }}">
+               value="{{ task.schedule_interval if task else 1441 }}">
       </div>
       {% if task and task.next_run_at %}
       <div class="col-sm-7 d-flex align-items-end">
