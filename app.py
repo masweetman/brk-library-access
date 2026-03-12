@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime, timezone
 from functools import wraps
+from urllib.parse import urlparse
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import (Flask, abort, jsonify, redirect, render_template,
@@ -32,7 +33,7 @@ def _parse_cookie_expiry(cookies_raw: str) -> str | None:
         if not isinstance(cookies, list) or not cookies:
             return None
         exp = cookies[0].get("expirationDate")
-        if exp is None:
+        if exp is None or isinstance(exp, bool):
             return None
         dt = datetime.fromtimestamp(float(exp), tz=timezone.utc)
         return dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -74,6 +75,24 @@ def own_task_or_admin(task):
     return current_user.is_admin or task["user_id"] == current_user.id
 
 
+def _safe_int(value, default: int) -> int:
+    """Convert value to int, returning default on failure."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_url(next_url: str | None) -> str:
+    """Return next_url only when it is a safe same-origin path; otherwise /tasks."""
+    if not next_url:
+        return url_for("tasks")
+    parsed = urlparse(next_url)
+    if parsed.scheme or parsed.netloc:
+        return url_for("tasks")
+    return next_url
+
+
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
 @app.route("/login", methods=["GET", "POST"])
@@ -91,7 +110,7 @@ def login():
         db.close()
         if row and verify_password(password, row["password"], row["salt"]):
             login_user(User(row))
-            return redirect(request.args.get("next") or url_for("tasks"))
+            return redirect(_safe_url(request.args.get("next")))
         error = "Invalid username or password."
     return render_template("login.html", error=error)
 
@@ -229,10 +248,10 @@ def config():
                 request.form.get("proxy_password", "").strip(),
                 request.form.get("user_data_dir",  "").strip(),
                 1 if request.form.get("headless") else 0,
-                int(request.form.get("timeout",      15000)),
-                int(request.form.get("delay_min_ms",   300)),
-                int(request.form.get("delay_max_ms",   900)),
-                int(request.form.get("slow_mo_ms",     100)),
+                _safe_int(request.form.get("timeout",      ""), 15000),
+                _safe_int(request.form.get("delay_min_ms", ""),   300),
+                _safe_int(request.form.get("delay_max_ms", ""),   900),
+                _safe_int(request.form.get("slow_mo_ms",   ""),   100),
             ),
         )
         db.commit()
@@ -273,7 +292,7 @@ def task_new():
     if request.method == "POST":
         db = get_db()
         sched_enabled  = 1 if request.form.get("schedule_enabled") else 0
-        sched_interval = max(1, int(request.form.get("schedule_interval") or 1440))
+        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1440, 1440))
         next_run       = f"datetime('now', '+{sched_interval} minutes')" if sched_enabled else "NULL"
         cookies_raw    = request.form.get("access_cookies", "").strip()
         cookie_expiry  = _parse_cookie_expiry(cookies_raw)
@@ -316,7 +335,7 @@ def task_edit(task_id):
 
     if request.method == "POST":
         sched_enabled  = 1 if request.form.get("schedule_enabled") else 0
-        sched_interval = max(1, int(request.form.get("schedule_interval") or 1440))
+        sched_interval = max(1, _safe_int(request.form.get("schedule_interval") or 1440, 1440))
         next_run       = f"datetime('now', '+{sched_interval} minutes')" if sched_enabled else "NULL"
         cookies_raw    = request.form.get("access_cookies", "").strip()
         cookie_expiry  = _parse_cookie_expiry(cookies_raw)
