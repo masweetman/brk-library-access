@@ -526,10 +526,11 @@ def _scheduler_tick():
 
 init_db()
 
+scheduler = BackgroundScheduler()
+scheduler.add_job(_scheduler_tick, "interval", minutes=1)
+scheduler.start()
+
 if __name__ == "__main__":
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(_scheduler_tick, "interval", minutes=1)
-    scheduler.start()
     try:
         app.run(debug=False, port=5000)
     finally:
