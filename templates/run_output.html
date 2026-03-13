@@ -28,8 +28,8 @@
 </p>
 {% endif %}
 <p class="text-muted small mb-3">
-  Started: {{ run.started_at }}
-  {% if run.finished_at %} &middot; Finished: {{ run.finished_at }}{% endif %}
+  Started: {{ format_dt(run.started_at) }}
+  {% if run.finished_at %} &middot; Finished: {{ format_dt(run.finished_at) }}{% endif %}
 </p>
 
 <pre class="run-output" id="output-pre">{{ run.output or '(waiting for output…)' }}</pre>

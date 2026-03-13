@@ -49,14 +49,14 @@
               {%- if t.cookies_expire_at < now_utc %} text-danger fw-semibold
               {%- elif t.cookies_expire_at[:7] <= now_utc[:7] %} text-warning fw-semibold
               {%- else %} text-muted
-              {%- endif %}" title="{{ t.cookies_expire_at }} UTC">
-              {{ t.cookies_expire_at[:10] }}
+              {%- endif %}" title="{{ format_dt(t.cookies_expire_at) }} {{ tz_name }}">
+              {{ format_dt(t.cookies_expire_at)[:10] }}
             </span>
           {% else %}
             <span class="text-muted">—</span>
           {% endif %}
         </td>
-        <td class="text-muted small">{{ t.last_run_at or '—' }}</td>
+        <td class="text-muted small">{{ format_dt(t.last_run_at) }}</td>
         <td>
           {% if t.last_run_status %}
             <span class="badge bg-{{ status_classes.get(t.last_run_status, 'secondary') }}

@@ -36,8 +36,8 @@
       {% for r in runs %}
       <tr>
         <td class="fw-semibold text-muted">{{ r.id }}</td>
-        <td class="small text-muted">{{ r.started_at }}</td>
-        <td class="small text-muted">{{ r.finished_at or '—' }}</td>
+        <td class="small text-muted">{{ format_dt(r.started_at) }}</td>
+        <td class="small text-muted">{{ format_dt(r.finished_at) }}</td>
         <td>
           <span class="badge bg-{{ sc.get(r.status, 'secondary') }}
                        {{ 'badge-running' if r.status == 'running' }}">

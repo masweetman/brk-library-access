@@ -92,7 +92,7 @@
           {%- else %} text-muted
           {%- endif %}">
           <i class="bi bi-clock"></i>
-          Soonest cookie expires: <strong>{{ task.cookies_expire_at }} UTC</strong>
+          Soonest cookie expires: <strong>{{ format_dt(task.cookies_expire_at) }} {{ tz_name }}</strong>
         </div>
       {% endif %}
     </div>

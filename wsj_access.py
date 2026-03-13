@@ -26,9 +26,8 @@ from playwright.sync_api import expect, sync_playwright, TimeoutError as Playwri
 # Try to import playwright-stealth; fall back to manual patches if not installed
 try:
     from playwright_stealth import Stealth
-    USE_STEALTH_LIB = True
 except ImportError:
-    USE_STEALTH_LIB = False
+    Stealth = None  # type: ignore[assignment,misc]
     print("[WARN] playwright-stealth not installed. Using manual stealth patches.")
     print("[WARN] Install with: pip install playwright-stealth")
 
@@ -160,7 +159,7 @@ def run():
         )
 
         # Apply stealth — use library if available, else fall back to manual script
-        if USE_STEALTH_LIB:
+        if Stealth is not None:
             stealth = Stealth(navigator_webdriver=False)
             stealth.apply_stealth_sync(context)
         else:

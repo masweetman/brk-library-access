@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import (Flask, abort, jsonify, redirect, render_template,
@@ -21,9 +22,41 @@ login_manager.login_view = "login"
 login_manager.login_message_category = "warning"
 
 
+def _safe_timezone(tz_name: str) -> str:
+    """Return tz_name if it is a valid IANA zone; otherwise return 'UTC'."""
+    try:
+        ZoneInfo(tz_name)
+        return tz_name
+    except (ZoneInfoNotFoundError, KeyError):
+        return "UTC"
+
+
 @app.context_processor
-def inject_now_utc():
-    return {"now_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")}
+def inject_timezone_context():
+    now_utc_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+    db = get_db()
+    row = db.execute("SELECT timezone FROM settings WHERE id = 1").fetchone()
+    db.close()
+    tz_name = (row["timezone"] if row and row["timezone"] else None) or "UTC"
+
+    try:
+        tz = ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, KeyError):
+        tz = ZoneInfo("UTC")
+        tz_name = "UTC"
+
+    def format_dt(dt_str: str | None) -> str:
+        """Convert a UTC 'YYYY-MM-DD HH:MM:SS' string to the configured timezone."""
+        if not dt_str:
+            return "—"
+        try:
+            dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            return dt.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return dt_str
+
+    return {"now_utc": now_utc_str, "format_dt": format_dt, "tz_name": tz_name}
 
 
 def _parse_cookie_expiry(cookies_raw: str) -> str | None:
@@ -275,7 +308,8 @@ def config():
                 timeout        = ?,
                 delay_min_ms   = ?,
                 delay_max_ms   = ?,
-                slow_mo_ms     = ?
+                slow_mo_ms     = ?,
+                timezone       = ?
                WHERE id = 1""",
             (
                 request.form.get("proxy_server",   "").strip(),
@@ -287,15 +321,18 @@ def config():
                 _safe_int(request.form.get("delay_min_ms", ""),   300),
                 _safe_int(request.form.get("delay_max_ms", ""),   900),
                 _safe_int(request.form.get("slow_mo_ms",   ""),   100),
+                _safe_timezone(request.form.get("timezone", "UTC")),
             ),
         )
         db.commit()
         db.close()
         return redirect(url_for("config"))
 
+    from zoneinfo import available_timezones
+    timezones = sorted(available_timezones())
     settings = db.execute("SELECT * FROM settings WHERE id = 1").fetchone()
     db.close()
-    return render_template("config.html", settings=settings)
+    return render_template("config.html", settings=settings, timezones=timezones)
 
 
 # ── Tasks list ─────────────────────────────────────────────────────────────────

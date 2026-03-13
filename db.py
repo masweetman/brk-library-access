@@ -39,7 +39,8 @@ def init_db():
                 timeout        INTEGER NOT NULL DEFAULT 15000,
                 delay_min_ms   INTEGER NOT NULL DEFAULT 300,
                 delay_max_ms   INTEGER NOT NULL DEFAULT 900,
-                slow_mo_ms     INTEGER NOT NULL DEFAULT 100
+                slow_mo_ms     INTEGER NOT NULL DEFAULT 100,
+                timezone       TEXT    NOT NULL DEFAULT 'UTC'
             );
             INSERT OR IGNORE INTO settings (id) VALUES (1);
 
@@ -100,6 +101,11 @@ def init_db():
         # ── Schema migration: add cookies_expire_at column ────────────────────
         if "cookies_expire_at" not in cols:
             conn.execute("ALTER TABLE tasks ADD COLUMN cookies_expire_at TEXT")
+
+        # ── Schema migration: add timezone column to settings ─────────────────
+        settings_cols = {r["name"] for r in conn.execute("PRAGMA table_info(settings)")}
+        if "timezone" not in settings_cols:
+            conn.execute("ALTER TABLE settings ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC'")
 
         # ── Seed default admin user if none exists ────────────────────────────
         if not conn.execute("SELECT 1 FROM users LIMIT 1").fetchone():
